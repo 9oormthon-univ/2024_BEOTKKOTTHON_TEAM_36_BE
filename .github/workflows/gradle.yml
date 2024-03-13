@@ -36,6 +36,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+
    # Configure Gradle for optimal use in GiHub Actions, including caching of downloaded dependencies.
     # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
      
@@ -45,6 +46,7 @@ jobs:
       with:
         arguments: clean build -x test
 
+
     # Docker build
     - name: Docker build
       run: |
@@ -52,6 +54,8 @@ jobs:
         docker build -t ${{ secrets.DOCKERHUB_REPOSITORY }} .
         docker tag ${{ secrets.DOCKERHUB_REPOSITORY }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:${GITHUB_SHA::7}
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:${GITHUB_SHA::7}	
+
+
     # Deploy
     - name: Deploy
       uses: appleboy/ssh-action@master
