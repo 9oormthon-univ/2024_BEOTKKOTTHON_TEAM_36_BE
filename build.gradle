@@ -38,7 +38,7 @@ dependencies {
 //yml submodule
 task copyYML(type: Copy){
     copy{
-        from './2024_BEOTKKOTTHON_TEAM_36_BE_YML'
+        from './goormthon-maeilmail-yml'
         include "*.yml"
         into './src/main/resources'
     }
