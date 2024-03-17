@@ -9,7 +9,6 @@ import java.util.Map;
 /**
  * ChatGPT 서비스 인터페이스
  *
- * @author : lee
  * @fileName : ChatGPTService
  * @since : 12/29/23
  */

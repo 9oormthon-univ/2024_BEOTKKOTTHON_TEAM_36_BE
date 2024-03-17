@@ -1,7 +1,5 @@
 package mongkey.maeilmail.controller;
 
-import io.github.flashvayne.chatgpt.service.ChatgptService;
-import lombok.RequiredArgsConstructor;
 import mongkey.maeilmail.dto.HelperRequestDto;
 import mongkey.maeilmail.service.ChatGPTService;
 import org.springframework.web.bind.annotation.PostMapping;
