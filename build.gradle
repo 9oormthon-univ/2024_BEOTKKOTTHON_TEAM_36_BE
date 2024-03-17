@@ -41,7 +41,6 @@ task copyYML(type: Copy){
     copy{
         from './goormthon-maeilmail-yml'
         include "*.yml"
-        exclude "application.yml"
         into './src/main/resources'
     }
 }
