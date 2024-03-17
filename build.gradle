@@ -30,7 +30,8 @@ dependencies {
     annotationProcessor('org.projectlombok:lombok')
     // mysql
     implementation 'mysql:mysql-connector-java:8.0.32'
-
+    //chatGPT
+    implementation 'io.github.flashvayne:chatgpt-spring-boot-starter:1.0.5'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
@@ -40,6 +41,7 @@ task copyYML(type: Copy){
     copy{
         from './goormthon-maeilmail-yml'
         include "*.yml"
+        exclude "application.yml"
         into './src/main/resources'
     }
 }
