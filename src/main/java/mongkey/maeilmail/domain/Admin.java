@@ -8,34 +8,37 @@ import mongkey.maeilmail.common.domain.BaseTimeEntity;
 
 @Getter
 @NoArgsConstructor
-@Table(name = "users")
+@Table(name = "admin")
 @Entity
-public class User extends BaseTimeEntity {
+public class Admin extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @OneToMany(mappedBy = "user")
-    @Column(name = "user_id")
+    @Column(name = "admin_id")
     private Long id;
 
     @Column(length = 255, nullable = false)
-    private String login_id;
+    private String employee_number;
 
     @Column(length = 255, nullable = false)
     private String password;
 
-    @Column(length = 255)
-    private String name;
-
     @Column(length = 320)
     private String email;
 
+    @Column(length = 255)
+    private String name;
+
+    @Column
+    private Integer access_level;
+
+
     @Builder
-    public User(String login_id, String password, String nickname, String email){
-        this.login_id = login_id;
+    public Admin (Long id, String employee_number, String password, String email, String name, Integer access_level){
+        this.id = id;
+        this.employee_number = employee_number;
         this.password = password;
-        this.name = nickname;
         this.email = email;
+        this.name = name;
+        this.access_level = access_level;
     }
-
-
 }
