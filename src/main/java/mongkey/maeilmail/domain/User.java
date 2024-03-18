@@ -30,10 +30,10 @@ public class User extends BaseTimeEntity {
     private String email;
 
     @Builder
-    public User(String login_id, String password, String nickname, String email){
+    public User(String login_id, String password, String name, String email){
         this.login_id = login_id;
         this.password = password;
-        this.name = nickname;
+        this.name = name;
         this.email = email;
     }
 
