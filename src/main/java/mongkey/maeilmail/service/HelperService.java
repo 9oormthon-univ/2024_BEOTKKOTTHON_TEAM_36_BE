@@ -1,7 +1,9 @@
 package mongkey.maeilmail.service;
 
 import mongkey.maeilmail.config.ChatGPTConfig;
+import mongkey.maeilmail.dto.helper.HelperRequestContentDto;
 import mongkey.maeilmail.dto.helper.HelperRequestDto;
+import mongkey.maeilmail.dto.helper.HelperToGptRequestDto;
 import mongkey.maeilmail.dto.helper.HelperResponseDto;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,8 +118,11 @@ public class HelperService implements ChatGPTService {
         // [STEP1] 토큰 정보가 포함된 Header를 가져옵니다.
         HttpHeaders headers = chatGPTConfig.httpHeaders();
 
+        // HelperRequestContentDto 객체 생성
+        HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto(helperRequestDto);
+
         // [STEP5] 통신을 위한 RestTemplate을 구성합니다.
-        HttpEntity<HelperRequestDto> requestEntity = new HttpEntity<>(helperRequestDto, headers);
+        HttpEntity<HelperToGptRequestDto> requestEntity = new HttpEntity<>(helperToGptRequestDto, headers);
         ResponseEntity<String> response = chatGPTConfig
                 .restTemplate()
                 .exchange(promptUrl, HttpMethod.POST, requestEntity, String.class);
@@ -148,6 +154,28 @@ public class HelperService implements ChatGPTService {
                 .build();
     }
 
+    private HelperToGptRequestDto setGptRequestDto(HelperRequestDto helperRequestDto){
+        HelperRequestContentDto systemMessage = HelperRequestContentDto.builder()
+                .role("system")
+                .content("\nSYSTEM:\nYou are Korean Mail text generator AI for college students based on input information ‘sender, sender_info, receiver, receiver_info, purpose’\n- You definitely divide it into (title), (greeting), (body), and (closing).\n- Your text should always be polite.\n- If you need to include specific information other than the input information, you have to write it in the form of [  additional information  ].\n")
+                .build();
+
+        HelperRequestContentDto userMessage = HelperRequestContentDto.builder()
+                .role("user")
+                .content(String.format("sender: %s\nsender_info: %s\nreceiver: %s\nreceiver_info: %s\npurpose: %s",
+                        helperRequestDto.getSender(),
+                        helperRequestDto.getSender_info(),
+                        helperRequestDto.getReceiver(),
+                        helperRequestDto.getReceiver_info(),
+                        helperRequestDto.getPurpose()))
+                .build();
+
+        // HelperToGptRequestDto 객체 생성
+        return HelperToGptRequestDto.builder()
+                .model(modelUrl)
+                .messages(Arrays.asList(systemMessage, userMessage))
+                .build();
+    }
     private String getFullEmail(Map<String, Object> resultMap){
         List<Map<String, Object>> choices = (List<Map<String, Object>>) resultMap.get("choices");
         Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");

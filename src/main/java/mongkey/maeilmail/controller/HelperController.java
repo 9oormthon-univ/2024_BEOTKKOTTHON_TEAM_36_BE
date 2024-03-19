@@ -41,10 +41,10 @@ public class HelperController {
     }
 
 
-    // 이메일 생성
+    // 이메일 생
     @PostMapping("")
-    public ApiResponse<?> getEmail(@RequestBody HelperRequestDto HelperRequestDto) {
-        HelperResponseDto result = chatGPTService.createEmail(HelperRequestDto);
-        return  ApiResponse.success(Success.SUCCESS, result);
+    public ApiResponse<?> getEmail(@RequestBody HelperRequestDto helperRequestDto) {
+        HelperResponseDto result = chatGPTService.createEmail(helperRequestDto);
+        return  ApiResponse.success(Success.CREATE_EMAIL_SUCCESS, result);
     }
 }

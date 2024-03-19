@@ -10,8 +10,10 @@ import java.util.List;
 public class HelperToGptRequestDto {
     private String model;
     private List<HelperRequestContentDto> messages;
+
     @Builder
-    public HelperToGptRequestDto(List<HelperRequestContentDto> messages) {
+    public HelperToGptRequestDto(String  model, List<HelperRequestContentDto> messages) {
+        this.model = model;
         this.messages = messages;
     }
 }
