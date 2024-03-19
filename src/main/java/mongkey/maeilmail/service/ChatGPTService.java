@@ -1,6 +1,6 @@
 package mongkey.maeilmail.service;
 
-import mongkey.maeilmail.dto.HelperRequestDto;
+import mongkey.maeilmail.dto.helper.HelperRequestDto;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,8 +18,7 @@ public interface ChatGPTService {
 
     List<Map<String, Object>> modelList();
 
-    Map<String, Object> prompt(HelperRequestDto helperRequestDto);
-
     Map<String, Object> isValidModel(String modelName);
 
+    Map<String, Object> createEmail(HelperRequestDto helperRequestDto);
 }

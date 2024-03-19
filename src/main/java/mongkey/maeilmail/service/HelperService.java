@@ -1,7 +1,7 @@
 package mongkey.maeilmail.service;
 
 import mongkey.maeilmail.config.ChatGPTConfig;
-import mongkey.maeilmail.dto.HelperRequestDto;
+import mongkey.maeilmail.dto.helper.HelperRequestDto;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -15,6 +15,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * ChatGPTService 구현체
+ *
+ */
 @Slf4j
 @Service
 public class HelperService implements ChatGPTService {
@@ -24,13 +28,18 @@ public class HelperService implements ChatGPTService {
         this.chatGPTConfig = chatGPTConfig;
     }
 
-    @Value("${openai.model}")
-    private String model;
+    @Value("${openai.url.model}")
+    private String modelUrl;
+
+    @Value("${openai.url.model-list}")
+    private String modelListUrl;
+
+    @Value("${openai.url.prompt}")
+    private String promptUrl;
+
 
     /**
-     * 사용 가능한 모델 리스트를 조회하는 비즈니스 로직
-     *
-     * @return
+     * 사용 가능한 모델 리스트를 조회
      */
     @Override
     public List<Map<String, Object>> modelList() {
@@ -68,11 +77,9 @@ public class HelperService implements ChatGPTService {
         return resultList;
     }
 
+
     /**
      * 모델이 유효한지 확인하는 비즈니스 로직
-     *
-     * @param modelName
-     * @return
      */
     @Override
     public Map<String, Object> isValidModel(String modelName) {
@@ -95,50 +102,35 @@ public class HelperService implements ChatGPTService {
     }
 
     /**
-     * ChatGTP 프롬프트 검색
+     * ChatGTP 이메일 생성
      */
+
     @Override
-    public Map<String, Object> prompt(HelperRequestDto helperRequestDto) {
+    public Map<String, Object> createEmail(HelperRequestDto helperRequestDto) {
         log.debug("[+] 프롬프트를 수행합니다.");
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> resultMap = new HashMap<>();
 
         // [STEP1] 토큰 정보가 포함된 Header를 가져옵니다.
         HttpHeaders headers = chatGPTConfig.httpHeaders();
 
-        String requestBody;
-        ObjectMapper om = new ObjectMapper();
+        // [STEP5] 통신을 위한 RestTemplate을 구성합니다.
+        HttpEntity<HelperRequestDto> requestEntity = new HttpEntity<>(helperRequestDto, headers);
+        ResponseEntity<String> response = chatGPTConfig
+                .restTemplate()
+                .exchange(promptUrl, HttpMethod.POST, requestEntity, String.class);
 
-        // [STEP2] helperRequestDto 수정
-
-        // [STEP3] properties의 model을 가져와서 객체에 추가합니다.
-        helperRequestDto = helperRequestDto.builder()
-                .model(model)
-                .prompt(helperRequestDto.getPrompt())
-                .temperature(0.8f)
-                .build();
-
-        try {
-            // [STEP4] Object -> String 직렬화
-            requestBody = om.writeValueAsString(helperRequestDto);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        // [STEP5] 통신을 위한 RestTemplate
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = chatGPTConfig.restTemplate()
-                .exchange(
-                        "https://api.openai.com/v1/completions",
-                        HttpMethod.POST,
-                        requestEntity,
-                        String.class);
         try {
             // [STEP6] String -> HashMap 역직렬화를 구성합니다.
-            result = om.readValue(response.getBody(), new TypeReference<Map<String, Object>>() {});
+            ObjectMapper om = new ObjectMapper();
+            resultMap = om.readValue(response.getBody(), new TypeReference<>() {
+            });
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            log.debug("JsonMappingException :: " + e.getMessage());
+        } catch (RuntimeException e) {
+            log.debug("RuntimeException :: " + e.getMessage());
         }
-        return result;
+
+        return resultMap;
     }
 }
