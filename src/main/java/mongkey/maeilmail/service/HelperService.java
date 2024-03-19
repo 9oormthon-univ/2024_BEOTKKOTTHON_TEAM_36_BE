@@ -137,6 +137,7 @@ public class HelperService implements ChatGPTService {
         // Separate part
         String processedContent = fullContent.replace("{", "").replace("}", "");
         String[] sectionStarts = {"(title)", "(greeting)", "(body)", "(closing)"};
+        log.debug(processedContent);
 
         return HelperResponseDto.builder()
                 .user_id(processedContent)
