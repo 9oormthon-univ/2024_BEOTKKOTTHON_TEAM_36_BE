@@ -1,17 +1,13 @@
 package mongkey.maeilmail.dto.helper;
 
-import lombok.*;
-
-import java.util.List;
+import lombok.Getter;
 
 @Getter
-@ToString
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class HelperRequestDto {
-    private String model;
-    private List<HelperRequestContentDto> messages;
-    @Builder
-    public HelperRequestDto(List<HelperRequestContentDto> messages) {
-        this.messages = messages;
-    }
+    private String user_id;
+    private String sender;
+    private String sender_info;
+    private String receiver;
+    private String receiver_info;
+    private String purpose;
 }
