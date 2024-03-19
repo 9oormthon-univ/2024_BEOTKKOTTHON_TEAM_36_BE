@@ -1,7 +1,10 @@
 package mongkey.maeilmail.service;
 
 import mongkey.maeilmail.config.ChatGPTConfig;
-import mongkey.maeilmail.dto.HelperRequestDto;
+import mongkey.maeilmail.dto.helper.HelperRequestContentDto;
+import mongkey.maeilmail.dto.helper.HelperRequestDto;
+import mongkey.maeilmail.dto.helper.HelperToGptRequestDto;
+import mongkey.maeilmail.dto.helper.HelperResponseDto;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -11,10 +14,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * ChatGPTService 구현체
+ *
+ */
 @Slf4j
 @Service
 public class HelperService implements ChatGPTService {
@@ -24,13 +32,18 @@ public class HelperService implements ChatGPTService {
         this.chatGPTConfig = chatGPTConfig;
     }
 
-    @Value("${openai.model}")
-    private String model;
+    @Value("${openai.url.model}")
+    private String modelUrl;
+
+    @Value("${openai.url.model-list}")
+    private String modelListUrl;
+
+    @Value("${openai.url.prompt}")
+    private String promptUrl;
+
 
     /**
-     * 사용 가능한 모델 리스트를 조회하는 비즈니스 로직
-     *
-     * @return
+     * 사용 가능한 모델 리스트를 조회
      */
     @Override
     public List<Map<String, Object>> modelList() {
@@ -68,11 +81,9 @@ public class HelperService implements ChatGPTService {
         return resultList;
     }
 
+
     /**
      * 모델이 유효한지 확인하는 비즈니스 로직
-     *
-     * @param modelName
-     * @return
      */
     @Override
     public Map<String, Object> isValidModel(String modelName) {
@@ -95,50 +106,92 @@ public class HelperService implements ChatGPTService {
     }
 
     /**
-     * ChatGTP 프롬프트 검색
+     * ChatGTP 이메일 생성
      */
+
     @Override
-    public Map<String, Object> prompt(HelperRequestDto helperRequestDto) {
+    public HelperResponseDto createEmail(HelperRequestDto helperRequestDto) {
         log.debug("[+] 프롬프트를 수행합니다.");
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> resultMap = new HashMap<>();
 
         // [STEP1] 토큰 정보가 포함된 Header를 가져옵니다.
         HttpHeaders headers = chatGPTConfig.httpHeaders();
 
-        String requestBody;
-        ObjectMapper om = new ObjectMapper();
+        // HelperRequestContentDto 객체 생성
+        HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto(helperRequestDto);
+        log.debug("gpt 전송용 객체 생성 성공");
 
-        // [STEP2] helperRequestDto 수정
+        // [STEP5] 통신을 위한 RestTemplate을 구성합니다.
+        HttpEntity<HelperToGptRequestDto> requestEntity = new HttpEntity<>(helperToGptRequestDto, headers);
+        ResponseEntity<String> response = chatGPTConfig
+                .restTemplate()
+                .exchange(promptUrl, HttpMethod.POST, requestEntity, String.class);
+        log.debug("gpt 통신 성공");
 
-        // [STEP3] properties의 model을 가져와서 객체에 추가합니다.
-        helperRequestDto = helperRequestDto.builder()
-                .model(model)
-                .prompt(helperRequestDto.getPrompt())
-                .temperature(0.8f)
-                .build();
-
-        try {
-            // [STEP4] Object -> String 직렬화
-            requestBody = om.writeValueAsString(helperRequestDto);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        // [STEP5] 통신을 위한 RestTemplate
-        HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = chatGPTConfig.restTemplate()
-                .exchange(
-                        "https://api.openai.com/v1/completions",
-                        HttpMethod.POST,
-                        requestEntity,
-                        String.class);
         try {
             // [STEP6] String -> HashMap 역직렬화를 구성합니다.
-            result = om.readValue(response.getBody(), new TypeReference<Map<String, Object>>() {});
+            ObjectMapper om = new ObjectMapper();
+            resultMap = om.readValue(response.getBody(), new TypeReference<>() {});
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            log.debug("JsonMappingException :: " + e.getMessage());
+        } catch (RuntimeException e) {
+            log.debug("RuntimeException :: " + e.getMessage());
         }
-        return result;
+
+        //Get Whole Email
+        String fullContent = getFullEmail(resultMap);
+        log.debug("이메일 작성 성공: "+ fullContent);
+
+        // Separate part
+        String processedContent = fullContent.replace("{", "").replace("}", "");
+        log.debug("전처리 완료된 본문: "+ processedContent);
+        String[] sectionStarts = {"(title)", "(greeting)", "(body)", "(closing)"};
+
+
+        return HelperResponseDto.builder()
+                .user_id("this is test user_id")
+                .subject(extractSection(processedContent, sectionStarts[0], sectionStarts[1]))
+                .greeting(extractSection(processedContent, sectionStarts[1], sectionStarts[2]))
+                .body(extractSection(processedContent, sectionStarts[2], sectionStarts[3]))
+                .closing(extractSection(processedContent, sectionStarts[3], null))
+                .build();
+    }
+
+    private HelperToGptRequestDto setGptRequestDto(HelperRequestDto helperRequestDto){
+        HelperRequestContentDto systemMessage = HelperRequestContentDto.builder()
+                .role("system")
+                .content("\nSYSTEM:\nYou are Korean Mail text generator AI for college students based on input information ‘sender, sender_info, receiver, receiver_info, purpose’\n- You definitely divide it into (title), (greeting), (body), and (closing).\n- Your text should always be polite.\n- If you need to include specific information other than the input information, you have to write it in the form of [  additional information  ].\n")
+                .build();
+
+        HelperRequestContentDto userMessage = HelperRequestContentDto.builder()
+                .role("user")
+                .content(String.format("sender: %s\nsender_info: %s\nreceiver: %s\nreceiver_info: %s\npurpose: %s",
+                        helperRequestDto.getSender(),
+                        helperRequestDto.getSender_info(),
+                        helperRequestDto.getReceiver(),
+                        helperRequestDto.getReceiver_info(),
+                        helperRequestDto.getPurpose()))
+                .build();
+
+        // HelperToGptRequestDto 객체 생성
+        return HelperToGptRequestDto.builder()
+                .model(modelUrl)
+                .messages(Arrays.asList(systemMessage, userMessage))
+                .build();
+    }
+    private String getFullEmail(Map<String, Object> resultMap){
+        List<Map<String, Object>> choices = (List<Map<String, Object>>) resultMap.get("choices");
+        Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+        return  (String) message.get("content");
+    }
+
+    private String extractSection(String email, String start, String end) {
+        // 섹션 시작 인덱스
+        int startIndex = email.indexOf(start) + start.length();
+        // 섹션 끝 인덱스. 다음 섹션 시작으로 정의하거나 문자열 끝으로 정의
+        int endIndex = (end != null) ? email.indexOf(end) : email.length();
+        // 섹션 내용 추출 및 반환
+        return email.substring(startIndex, endIndex).trim();
     }
 }
