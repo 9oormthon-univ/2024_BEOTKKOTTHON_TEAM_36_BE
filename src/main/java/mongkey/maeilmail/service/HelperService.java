@@ -120,12 +120,14 @@ public class HelperService implements ChatGPTService {
 
         // HelperRequestContentDto 객체 생성
         HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto(helperRequestDto);
+        log.debug("gpt 전송용 객체 생성 성공");
 
         // [STEP5] 통신을 위한 RestTemplate을 구성합니다.
         HttpEntity<HelperToGptRequestDto> requestEntity = new HttpEntity<>(helperToGptRequestDto, headers);
         ResponseEntity<String> response = chatGPTConfig
                 .restTemplate()
                 .exchange(promptUrl, HttpMethod.POST, requestEntity, String.class);
+        log.debug("gpt 통신 성공");
 
         try {
             // [STEP6] String -> HashMap 역직렬화를 구성합니다.
@@ -139,14 +141,16 @@ public class HelperService implements ChatGPTService {
 
         //Get Whole Email
         String fullContent = getFullEmail(resultMap);
+        log.debug("이메일 작성 성공: "+ fullContent);
 
         // Separate part
         String processedContent = fullContent.replace("{", "").replace("}", "");
+        log.debug("전처리 완료된 본문: "+ processedContent);
         String[] sectionStarts = {"(title)", "(greeting)", "(body)", "(closing)"};
-        log.debug(processedContent);
+
 
         return HelperResponseDto.builder()
-                .user_id(processedContent)
+                .user_id("this is test user_id")
                 .subject(extractSection(processedContent, sectionStarts[0], sectionStarts[1]))
                 .greeting(extractSection(processedContent, sectionStarts[1], sectionStarts[2]))
                 .body(extractSection(processedContent, sectionStarts[2], sectionStarts[3]))
