@@ -2,6 +2,7 @@ package mongkey.maeilmail.service;
 
 import mongkey.maeilmail.config.ChatGPTConfig;
 import mongkey.maeilmail.dto.helper.HelperRequestDto;
+import mongkey.maeilmail.dto.helper.HelperResponseDto;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -106,7 +107,7 @@ public class HelperService implements ChatGPTService {
      */
 
     @Override
-    public Map<String, Object> createEmail(HelperRequestDto helperRequestDto) {
+    public HelperResponseDto createEmail(HelperRequestDto helperRequestDto) {
         log.debug("[+] 프롬프트를 수행합니다.");
 
         Map<String, Object> resultMap = new HashMap<>();
@@ -123,14 +124,21 @@ public class HelperService implements ChatGPTService {
         try {
             // [STEP6] String -> HashMap 역직렬화를 구성합니다.
             ObjectMapper om = new ObjectMapper();
-            resultMap = om.readValue(response.getBody(), new TypeReference<>() {
-            });
+            resultMap = om.readValue(response.getBody(), new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             log.debug("JsonMappingException :: " + e.getMessage());
         } catch (RuntimeException e) {
             log.debug("RuntimeException :: " + e.getMessage());
         }
 
-        return resultMap;
+        String fullContent = getFullEmail(resultMap);
+        return HelperResponseDto.builder()
+                .body(fullContent).build();
+    }
+
+    private String getFullEmail(Map<String, Object> resultMap){
+        List<Map<String, Object>> choices = (List<Map<String, Object>>) resultMap.get("choices");
+        Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+        return  (String) message.get("content");
     }
 }

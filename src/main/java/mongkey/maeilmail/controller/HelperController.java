@@ -3,6 +3,7 @@ package mongkey.maeilmail.controller;
 import mongkey.maeilmail.common.response.ApiResponse;
 import mongkey.maeilmail.common.response.Success;
 import mongkey.maeilmail.dto.helper.HelperRequestDto;
+import mongkey.maeilmail.dto.helper.HelperResponseDto;
 import mongkey.maeilmail.service.ChatGPTService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,7 +44,7 @@ public class HelperController {
     // 이메일 생성
     @PostMapping("")
     public ApiResponse<?> getEmail(@RequestBody HelperRequestDto HelperRequestDto) {
-        Map<String, Object> result = chatGPTService.createEmail(HelperRequestDto);
+        HelperResponseDto result = chatGPTService.createEmail(HelperRequestDto);
         return  ApiResponse.success(Success.SUCCESS, result);
     }
 }
