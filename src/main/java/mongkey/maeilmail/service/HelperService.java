@@ -131,14 +131,34 @@ public class HelperService implements ChatGPTService {
             log.debug("RuntimeException :: " + e.getMessage());
         }
 
+        //Get Whole Email
         String fullContent = getFullEmail(resultMap);
+
+        // Separate part
+        String processedContent = fullContent.replace("{", "").replace("}", "");
+        String[] sectionStarts = {"(title)", "(greeting)", "(body)", "(closing)"};
+
         return HelperResponseDto.builder()
-                .body(fullContent).build();
+                .user_id(processedContent)
+                .subject(extractSection(processedContent, sectionStarts[0], sectionStarts[1]))
+                .greeting(extractSection(processedContent, sectionStarts[1], sectionStarts[2]))
+                .body(extractSection(processedContent, sectionStarts[2], sectionStarts[3]))
+                .closing(extractSection(processedContent, sectionStarts[3], null))
+                .build();
     }
 
     private String getFullEmail(Map<String, Object> resultMap){
         List<Map<String, Object>> choices = (List<Map<String, Object>>) resultMap.get("choices");
         Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
         return  (String) message.get("content");
+    }
+
+    private String extractSection(String email, String start, String end) {
+        // 섹션 시작 인덱스
+        int startIndex = email.indexOf(start) + start.length();
+        // 섹션 끝 인덱스. 다음 섹션 시작으로 정의하거나 문자열 끝으로 정의
+        int endIndex = (end != null) ? email.indexOf(end) : email.length();
+        // 섹션 내용 추출 및 반환
+        return email.substring(startIndex, endIndex).trim();
     }
 }
