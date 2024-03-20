@@ -1,4 +1,4 @@
-package mongkey.maeilmail.dto.helper;
+package mongkey.maeilmail.dto.helper.response;
 
 import lombok.Builder;
 import lombok.Getter;

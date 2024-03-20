@@ -1,6 +1,7 @@
-package mongkey.maeilmail.dto.helper;
+package mongkey.maeilmail.dto.helper.request;
 
 import lombok.*;
+import mongkey.maeilmail.dto.helper.request.HelperRequestContentDto;
 
 import java.util.List;
 

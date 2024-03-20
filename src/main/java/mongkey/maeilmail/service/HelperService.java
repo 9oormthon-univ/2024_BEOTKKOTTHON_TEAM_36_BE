@@ -1,10 +1,11 @@
 package mongkey.maeilmail.service;
 
 import mongkey.maeilmail.config.ChatGPTConfig;
-import mongkey.maeilmail.dto.helper.HelperRequestContentDto;
-import mongkey.maeilmail.dto.helper.HelperRequestDto;
-import mongkey.maeilmail.dto.helper.HelperToGptRequestDto;
-import mongkey.maeilmail.dto.helper.HelperResponseDto;
+import mongkey.maeilmail.dto.helper.request.HelperRequestContentDto;
+import mongkey.maeilmail.dto.helper.request.HelperRequestDto;
+import mongkey.maeilmail.dto.helper.request.HelperToGptRequestDto;
+import mongkey.maeilmail.dto.helper.response.HelperResponseDto;
+import mongkey.maeilmail.dto.helper.response.HelperRetryResponseDto;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -32,8 +33,11 @@ public class HelperService implements ChatGPTService {
         this.chatGPTConfig = chatGPTConfig;
     }
 
-    @Value("${openai.url.model}")
-    private String modelUrl;
+    @Value("${openai.url.model-v1}")
+    private String create_model;
+
+    @Value("${openai.url.model-v1}")
+    private String retry_model;
 
     @Value("${openai.url.model-list}")
     private String modelListUrl;
@@ -42,73 +46,11 @@ public class HelperService implements ChatGPTService {
     private String promptUrl;
 
 
-    /**
-     * 사용 가능한 모델 리스트를 조회
-     */
-    @Override
-    public List<Map<String, Object>> modelList() {
-        log.debug("[+] 모델 리스트를 조회합니다.");
-        List<Map<String, Object>> resultList = null;
 
-        // [STEP1] 토큰 정보가 포함된 Header를 가져옵니다.
-        HttpHeaders headers = chatGPTConfig.httpHeaders();
-
-        // [STEP2] 통신을 위한 RestTemplate을 구성합니다.
-        ResponseEntity<String> response = chatGPTConfig.restTemplate().exchange(
-                "https://api.openai.com/v1/models",
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                String.class);
-
-        try {
-            // [STEP3] Jackson을 기반으로 응답값을 가져옵니다.
-            ObjectMapper om = new ObjectMapper();
-            Map<String, Object> data = om.readValue(response.getBody(), new TypeReference<Map<String, Object>>() {});
-
-            // [STEP4] 응답 값을 결과값에 넣고 출력을 해봅니다.
-            resultList = (List<Map<String, Object>>) data.get("data");
-            for (Map<String, Object> object : resultList) {
-                log.debug("ID: " + object.get("id"));
-                log.debug("Object: " + object.get("object"));
-                log.debug("Created: " + object.get("created"));
-                log.debug("Owned By: " + object.get("owned_by"));
-            }
-        } catch (JsonMappingException e) {
-            log.debug("JsonMappingException :: " + e.getMessage());
-        } catch (JsonProcessingException e) {
-            log.debug("JsonProcessingException :: " + e.getMessage());
-        }
-        return resultList;
-    }
-
-
-    /**
-     * 모델이 유효한지 확인하는 비즈니스 로직
-     */
-    @Override
-    public Map<String, Object> isValidModel(String modelName) {
-        log.debug("[+] 모델이 유효한지 조회합니다. 모델 : {}", modelName);
-        Map<String, Object> result;
-
-        HttpHeaders headers = chatGPTConfig.httpHeaders();
-        ResponseEntity<String> response = chatGPTConfig.restTemplate().exchange(
-                "https://api.openai.com/v1/models/" + modelName,
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                String.class);
-        try {
-            ObjectMapper om = new ObjectMapper();
-            result = om.readValue(response.getBody(), new TypeReference<>() {});
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        return result;
-    }
 
     /**
      * ChatGTP 이메일 생성
      */
-
     @Override
     public HelperResponseDto createEmail(HelperRequestDto helperRequestDto) {
         log.debug("[+] 프롬프트를 수행합니다.");
@@ -119,7 +61,12 @@ public class HelperService implements ChatGPTService {
         HttpHeaders headers = chatGPTConfig.httpHeaders();
 
         // HelperRequestContentDto 객체 생성
-        HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto(helperRequestDto);
+        HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto( create_model,
+                "You are Korean Mail text generator AI for college students based on input information ‘sender, sender_info, receiver, receiver_info, purpose’\n" +
+                        "- You should divide it into (title), (greeting), (body), and (closing). You NEVER missing out any of these\n" +
+                        "- Your text should always be very polite.\n" +
+                        "- Never put in the information of a user you don't know. If you need to include specific information other than the input information, you have to write it in the form of [  additional information  ].\n"
+                , helperRequestDto);
         log.debug("gpt 전송용 객체 생성 성공");
 
         // [STEP5] 통신을 위한 RestTemplate을 구성합니다.
@@ -158,10 +105,61 @@ public class HelperService implements ChatGPTService {
                 .build();
     }
 
-    private HelperToGptRequestDto setGptRequestDto(HelperRequestDto helperRequestDto){
+
+    @Override
+    public HelperRetryResponseDto retryEmail(String contentPart, HelperRequestDto helperRequestDto) {
+        log.debug("[+] 프롬프트를 수행합니다.");
+
+        Map<String, Object> resultMap = new HashMap<>();
+
+        // [STEP1] 토큰 정보가 포함된 Header를 가져옵니다.
+        HttpHeaders headers = chatGPTConfig.httpHeaders();
+
+        // HelperRequestContentDto 객체 생성
+        HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto(retry_model,
+                "",
+                helperRequestDto);
+        log.debug("gpt 전송용 객체 생성 성공");
+
+        // [STEP5] 통신을 위한 RestTemplate을 구성합니다.
+        HttpEntity<HelperToGptRequestDto> requestEntity = new HttpEntity<>(helperToGptRequestDto, headers);
+        ResponseEntity<String> response = chatGPTConfig
+                .restTemplate()
+                .exchange(promptUrl, HttpMethod.POST, requestEntity, String.class);
+        log.debug("gpt 통신 성공");
+
+        try {
+            // [STEP6] String -> HashMap 역직렬화를 구성합니다.
+            ObjectMapper om = new ObjectMapper();
+            resultMap = om.readValue(response.getBody(), new TypeReference<>() {});
+        } catch (JsonProcessingException e) {
+            log.debug("JsonMappingException :: " + e.getMessage());
+        } catch (RuntimeException e) {
+            log.debug("RuntimeException :: " + e.getMessage());
+        }
+
+        //Get Whole Email
+        String fullContent = getFullEmail(resultMap);
+        log.debug("이메일 작성 성공: "+ fullContent);
+
+        // Separate part
+        String processedContent = fullContent.replace("{", "").replace("}", "");
+        log.debug("전처리 완료된 본문: "+ processedContent);
+        String[] sectionStarts = {"(version1)", "(version2)", "(version3)"};
+
+
+        return HelperRetryResponseDto.builder()
+                .user_id(1L)
+                .version1(extractSection(processedContent, sectionStarts[0], sectionStarts[1]))
+                .version2(extractSection(processedContent, sectionStarts[1], sectionStarts[2]))
+                .version3(extractSection(processedContent, sectionStarts[2], null))
+                .build();
+    }
+
+    private HelperToGptRequestDto setGptRequestDto(String model, String content, HelperRequestDto helperRequestDto){
         HelperRequestContentDto systemMessage = HelperRequestContentDto.builder()
                 .role("system")
-                .content("\nSYSTEM:\nYou are Korean Mail text generator AI for college students based on input information ‘sender, sender_info, receiver, receiver_info, purpose’\n- You definitely divide it into (title), (greeting), (body), and (closing).\n- Your text should always be polite.\n- If you need to include specific information other than the input information, you have to write it in the form of [  additional information  ].\n")
+                .content(content)
                 .build();
 
         HelperRequestContentDto userMessage = HelperRequestContentDto.builder()
@@ -176,10 +174,11 @@ public class HelperService implements ChatGPTService {
 
         // HelperToGptRequestDto 객체 생성
         return HelperToGptRequestDto.builder()
-                .model(modelUrl)
+                .model(model)
                 .messages(Arrays.asList(systemMessage, userMessage))
                 .build();
     }
+
     private String getFullEmail(Map<String, Object> resultMap){
         List<Map<String, Object>> choices = (List<Map<String, Object>>) resultMap.get("choices");
         Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
