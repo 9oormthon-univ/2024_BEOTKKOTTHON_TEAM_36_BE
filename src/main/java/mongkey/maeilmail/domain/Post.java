@@ -9,6 +9,8 @@ import mongkey.maeilmail.common.domain.BaseTimeEntity;
 import mongkey.maeilmail.domain.enums.CategoryType;
 import org.w3c.dom.Text;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -36,6 +38,7 @@ public class Post extends BaseTimeEntity {
 
     @Builder
     public Post(Long id, String user_id, String post_content, CategoryType category, String title, String content){
+        this.id = id;
         this.user_id = user_id;
         this.category = category;
         this.title = title;
@@ -50,7 +53,7 @@ public class Post extends BaseTimeEntity {
         return user_id;
     }
 
-    public Enum getCategory() {
+    public CategoryType getCategory() {
         return category;
     }
 
