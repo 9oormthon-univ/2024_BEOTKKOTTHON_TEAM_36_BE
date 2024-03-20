@@ -29,8 +29,9 @@ public class HelperController {
         return  ApiResponse.success(Success.CREATE_EMAIL_SUCCESS, result);
     }
 
+
     // 이메일 생성
-    @PostMapping("")
+    @PostMapping("/retry")
     public ApiResponse<?> retryEmail(@RequestParam(name = "content-part") String contentPart, @RequestBody HelperRequestDto helperRequestDto) {
         HelperRetryResponseDto result = chatGPTService.retryEmail(contentPart, helperRequestDto);
         return  ApiResponse.success(Success.RECREATE_EMAIL_SUCCESS, result);
