@@ -20,7 +20,7 @@ public class Template extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String template_content;
 
-//    @Column(name = "user_id")
-//    private String user_id;
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_id")
+    private Admin admin;
 }
