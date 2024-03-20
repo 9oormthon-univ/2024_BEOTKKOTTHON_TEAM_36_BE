@@ -13,7 +13,6 @@ import mongkey.maeilmail.common.domain.BaseTimeEntity;
 public class User extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @OneToMany(mappedBy = "user")
     @Column(name = "user_id")
     private Long id;
 

@@ -21,10 +21,7 @@ public class Post extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 255, nullable = false)
-    private String user_id;
-
-    @Column(length = 255, nullable = false)
+    @Column(nullable = false)
     @Enumerated(value = EnumType.STRING)
     private CategoryType category;
 
@@ -34,20 +31,20 @@ public class Post extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Builder
-    public Post(Long id, String user_id, String post_content, CategoryType category, String title, String content){
-        this.user_id = user_id;
+    public Post(Long id, CategoryType category, String title, String content, User user){
         this.category = category;
         this.title = title;
         this.content = content;
+        this.user = user;
     }
 
     public Long getId() {
         return id;
-    }
-
-    public String getUser_id() {
-        return user_id;
     }
 
     public Enum getCategory() {
@@ -67,10 +64,6 @@ public class Post extends BaseTimeEntity {
         this.id = id;
     }
 
-    public void setUser_id(String user_id) {
-        this.user_id = user_id;
-    }
-
     public void setCategory(CategoryType category) {
         this.category = category;
     }
@@ -87,7 +80,7 @@ public class Post extends BaseTimeEntity {
     public String toString() {
         return "Post{" +
                 "id=" + id +
-                ", user_id='" + user_id + '\'' +
+                ", user_id='" + user + '\'' +
                 ", category=" + category +
                 ", title='" + title + '\'' +
                 ", content='" + content + '\'' +
@@ -95,23 +88,3 @@ public class Post extends BaseTimeEntity {
     }
 
 }
-
-//@Entity
-//@Table(name = "posts")
-//public class Post extends BaseTimeEntity {
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long post_id;
-//
-//    @Column(length = 255, nullable = false)
-//    private String post_title;
-//
-//    @Column(columnDefinition = "TEXT", nullable = false)
-//    private String post_content;
-//
-//    @ManyToOne
-//    @JoinColumn(name = "user_id")
-//    private User user;
-//
-//    // 생성자, 게터, 세터 등 필요한 코드들...
-//}
