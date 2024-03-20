@@ -145,7 +145,7 @@ public class HelperService implements ChatGPTService {
         // Separate part
         String processedContent = fullContent.replace("{", "").replace("}", "");
         log.debug("전처리 완료된 본문: "+ processedContent);
-        String[] sectionStarts = {"1.", "2.", "3."};
+        String[] sectionStarts = {"(version1)", "(version2)", "(version3)"};
 
 
         return HelperRetryResponseDto.builder()
