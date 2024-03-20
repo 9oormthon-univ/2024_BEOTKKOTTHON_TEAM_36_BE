@@ -10,6 +10,7 @@ import mongkey.maeilmail.domain.User;
 import mongkey.maeilmail.domain.enums.CategoryType;
 import mongkey.maeilmail.dto.PageInfo;
 import mongkey.maeilmail.dto.like.LikePostRequestDto;
+import mongkey.maeilmail.dto.post.response.PostDto;
 import mongkey.maeilmail.dto.post.response.PostResponseDto;
 import mongkey.maeilmail.dto.post.request.SavePostRequestDto;
 import mongkey.maeilmail.dto.post.request.UpdatePostRequestDto;
@@ -55,7 +56,17 @@ public class PostService {
     @Transactional
     public ApiResponse<?> findAllPost(){
         List<Post> allPost = postRepository.findAll();
-        return ApiResponse.success(Success.SUCCESS, AllPostResponseDto.builder().allPostList(allPost).build());
+        List<PostDto> postDtoList = allPost.stream()
+                .map(post -> PostDto.builder()
+                        .post_id(post.getId())
+                        .writer(post.getUser().getName())
+                        .title(post.getTitle())
+                        .content(post.getContent())
+                        .created_at(post.getCreated_at())
+                        .updated_at(post.getUpdated_at())
+                        .build()).toList();
+
+        return ApiResponse.success(Success.SUCCESS, AllPostResponseDto.builder().allPostList(postDtoList).build());
     }
 
 //    /*카테고리별 게시글 조회*/
