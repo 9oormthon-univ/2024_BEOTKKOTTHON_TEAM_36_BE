@@ -1,4 +1,4 @@
-package mongkey.maeilmail.dto.helper;
+package mongkey.maeilmail.dto.helper.response;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -6,7 +6,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class HelperResponseDto {
-    private String user_id;
+    private Long user_id;
     private String subject;
     private String greeting;
     private String body;
