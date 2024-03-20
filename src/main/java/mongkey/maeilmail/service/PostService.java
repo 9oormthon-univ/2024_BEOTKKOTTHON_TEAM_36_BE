@@ -2,11 +2,10 @@ package mongkey.maeilmail.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import mongkey.maeilmail.common.exception.NotFoundException;
 import mongkey.maeilmail.common.response.ApiResponse;
-//import mongkey.maeilmail.dto.post.SavePostRequestDto;
 import mongkey.maeilmail.common.response.Error;
 import mongkey.maeilmail.domain.Post;
-import mongkey.maeilmail.domain.PostLike;
 import mongkey.maeilmail.domain.User;
 import mongkey.maeilmail.dto.post.LikePostRequestDto;
 import mongkey.maeilmail.dto.post.PostResponseDto;
@@ -42,7 +41,9 @@ public class PostService {
 //
     @Transactional
     public ApiResponse<?> savePost(SavePostRequestDto requestDto){
-        Post post = postRepository.save(requestDto.toEntity());
+        User user = userRepository.findById(requestDto.getUser_id())
+                .orElseThrow(()-> new NotFoundException("해당 아이디를 가진 유저가 존재하지 않습니다.") {});
+        Post post = postRepository.save(requestDto.toEntity(user));
         return ApiResponse.success(Success.CREATE_POST_SUCCESS, setResponseDto(post));
     }
 
@@ -58,7 +59,10 @@ public class PostService {
 
     @Transactional
     public ApiResponse<?> updatePost(Long post_id, UpdatePostRequestDto requestDto){
-        Optional<Post> findPost = postRepository.findByPostIdAndUserId(post_id, requestDto.getUser_id());
+        User user = userRepository.findById(requestDto.getUser_id())
+                .orElseThrow(()-> new NotFoundException("해당 아이디를 가진 유저가 존재하지 않습니다.") {});
+
+        Optional<Post> findPost = postRepository.findById(post_id);
         if (!findPost.isPresent()){
             return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "찾으려는 데이터가 없습니다");
         }
@@ -89,49 +93,18 @@ public class PostService {
 
     @Transactional
     public ApiResponse<?> likePost(Long post_id, LikePostRequestDto requestDto){
-        //해당 게시글 있는지 확인
-        Optional<Post> findPost = postRepository.findById(post_id);
-
-        // 해당 게시글을 찾을 수 없다면
-        if (!findPost.isPresent()){
-            return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "찾으려는 게시글이 없습니다");
-        }
-
-        String string = findPost.get().toString();
-        System.out.println("string = " + string);
-
-        // 게시글 존재시 유저가 해당 게시글에 좋아요 누른 상태인지 post_id, user_id를 통해 postlikes 테이블 조회
-        Optional<PostLike> findPostLike = postLikeRepository.findByPostIdAndUserId(post_id, requestDto.toEntity().getUser_id());
-        if (!findPostLike.isPresent()){
-            // 이 시점에 user_id = String, post_id = Long
-            PostLike savePostLike = postLikeRepository.save(new PostLike(requestDto.getUser_id(), post_id));
-            return ApiResponse.success(Success.CREATE_POST_SUCCESS, "게시글 좋아요를 완료했습니다");
-        }
-        // 만약에 해당 게시글에 이미 좋아요 눌렀다면
-        return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "게시글 좋아요를 실패했습니다");
+        return ApiResponse.success(Success.SUCCESS);
     }
 
     public ApiResponse<?> unlikePost(Long post_id, LikePostRequestDto requestDto){
-        Optional<Post> findPost = postRepository.findById(post_id);
-        if (!findPost.isPresent()){
-            return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "찾으려는 게시글이 없습니다");
-        }
-
-        // 해당 게시글이 있다면 -> postlikes 테이블에 post_id, user_id를 통해 유저가 해당 게시글에 좋아요 누른 상태인지 확인
-        Optional<PostLike> findPostLike = postLikeRepository.findByPostIdAndUserId(post_id, requestDto.toEntity().getUser_id());
-        if (findPostLike.isPresent()){
-            postLikeRepository.deleteByPostIdAndUserId(requestDto.toEntity().getUser_id(), post_id);
-            return ApiResponse.success(Success.CREATE_POST_SUCCESS, "게시글 좋아요 삭제를 완료했습니다");
-        }
-        // 해당 게시글이 좋아요 수가 0이라면
-
-//        postRepository.deleteById(post_id);
-        return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "해당 게시글 좋아요 수가 0이라서 삭제를 실패했습니다");
+        return ApiResponse.success(Success.SUCCESS);
     }
+
+
     private PostResponseDto setResponseDto(Post post) {
         return PostResponseDto
                 .builder()
-                .user_id(post.getUser_id())
+                .user_id(post.getUser().getId())
                 .category(post.getCategory().toString())
                 .title(post.getTitle())
                 .content(post.getContent())
