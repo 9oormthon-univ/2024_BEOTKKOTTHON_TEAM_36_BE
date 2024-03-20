@@ -2,11 +2,11 @@ package mongkey.maeilmail.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import mongkey.maeilmail.common.exception.NotFoundException;
 import mongkey.maeilmail.common.response.ApiResponse;
 import mongkey.maeilmail.common.response.Error;
 import mongkey.maeilmail.domain.Post;
 import mongkey.maeilmail.domain.User;
+import mongkey.maeilmail.dto.PageInfo;
 import mongkey.maeilmail.dto.post.LikePostRequestDto;
 import mongkey.maeilmail.dto.post.PostResponseDto;
 import mongkey.maeilmail.dto.post.SavePostRequestDto;
@@ -16,6 +16,7 @@ import mongkey.maeilmail.repository.PostLikeRepository;
 import mongkey.maeilmail.repository.PostRepository;
 import mongkey.maeilmail.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import mongkey.maeilmail.common.response.Success;
 
@@ -57,6 +58,23 @@ public class PostService {
         return ApiResponse.success(Success.SUCCESS, AllPostResponseDto.builder().allPostList(allPost).build());
     }
 
+//    /*카테고리별 게시글 조회*/
+    public ApiResponse<?> findPostByCategory(CategoryType categoryType, Pageable pageable) {
+        Page<Post> allPostByCategory = postRepository.findByCategory(pageable, categoryType.toString());
+        System.out.println("allPostByCategory.toString() = " + allPostByCategory.toString());
+        //set response
+        //Set Response Dtos
+        List<Post>postList = setPostList(allPostByCategory);
+        PageInfo pageInfo = setPageInfo(allPostByCategory);
+        return ApiResponse.success(Success.SUCCESS, PostByCategoryDto.builder()
+                .pageInfo(pageInfo)
+                .categoryType(categoryType)
+                .postList(postList)
+                .build());
+//        //리턴할 때 json 형식 맞춰서 각 페이지 별 게시글 리턴
+//        return ApiResponse.success(Success.SUCCESS, "카테고리별 게시글 조회에 성공했습니다");
+    }
+
     @Transactional
     public ApiResponse<?> updatePost(Long post_id, UpdatePostRequestDto requestDto){
         User user = userRepository.findById(requestDto.getUser_id())
@@ -91,6 +109,7 @@ public class PostService {
         return ApiResponse.success(Success.CREATE_POST_SUCCESS, "게시글 삭제를 완료했습니다");
     }
 
+
     @Transactional
     public ApiResponse<?> likePost(Long post_id, LikePostRequestDto requestDto){
         return ApiResponse.success(Success.SUCCESS);
@@ -100,7 +119,6 @@ public class PostService {
         return ApiResponse.success(Success.SUCCESS);
     }
 
-
     private PostResponseDto setResponseDto(Post post) {
         return PostResponseDto
                 .builder()
@@ -109,6 +127,28 @@ public class PostService {
                 .title(post.getTitle())
                 .content(post.getContent())
                 .written_at(post.getCreated_at())
+                .build();
+    }
+
+    private List<Post> setPostList(Page<Post> postPage){
+        return postPage.stream()
+                .map(post -> Post.builder()
+                        .id(post.getId())
+                        .user_id(post.getUser_id())
+                        .category(post.getCategory())
+                        .title(post.getTitle())
+                        .content(post.getContent())
+                        .build())
+                .toList();
+    }
+
+    private PageInfo setPageInfo(Page<Post> postPage){
+        return PageInfo.builder()
+                .last(!postPage.hasNext())
+                .previous(postPage.hasPrevious())
+                .nowPage(postPage.getNumber())
+                .totalPages(postPage.getTotalPages())
+                .totalElements(postPage.getTotalElements())
                 .build();
     }
 }

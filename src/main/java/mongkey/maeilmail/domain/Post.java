@@ -9,6 +9,8 @@ import mongkey.maeilmail.common.domain.BaseTimeEntity;
 import mongkey.maeilmail.domain.enums.CategoryType;
 import org.w3c.dom.Text;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -88,3 +90,23 @@ public class Post extends BaseTimeEntity {
     }
 
 }
+
+//@Entity
+//@Table(name = "posts")
+//public class Post extends BaseTimeEntity {
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    private Long post_id;
+//
+//    @Column(length = 255, nullable = false)
+//    private String post_title;
+//
+//    @Column(columnDefinition = "TEXT", nullable = false)
+//    private String post_content;
+//
+//    @ManyToOne
+//    @JoinColumn(name = "user_id")
+//    private User user;
+//
+//    // 생성자, 게터, 세터 등 필요한 코드들...
+//}
