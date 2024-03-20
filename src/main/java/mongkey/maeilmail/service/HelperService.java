@@ -150,7 +150,7 @@ public class HelperService implements ChatGPTService {
 
 
         return HelperResponseDto.builder()
-                .user_id("this is test user_id")
+                .user_id(1L)
                 .subject(extractSection(processedContent, sectionStarts[0], sectionStarts[1]))
                 .greeting(extractSection(processedContent, sectionStarts[1], sectionStarts[2]))
                 .body(extractSection(processedContent, sectionStarts[2], sectionStarts[3]))
