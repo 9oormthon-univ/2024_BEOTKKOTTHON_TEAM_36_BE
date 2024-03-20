@@ -2,21 +2,26 @@ package mongkey.maeilmail.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import mongkey.maeilmail.common.exception.NotFoundException;
 import mongkey.maeilmail.common.response.ApiResponse;
-//import mongkey.maeilmail.dto.post.SavePostRequestDto;
 import mongkey.maeilmail.common.response.Error;
 import mongkey.maeilmail.domain.Post;
-import mongkey.maeilmail.domain.PostLike;
 import mongkey.maeilmail.domain.User;
-import mongkey.maeilmail.dto.post.LikePostRequestDto;
-import mongkey.maeilmail.dto.post.PostResponseDto;
-import mongkey.maeilmail.dto.post.SavePostRequestDto;
-import mongkey.maeilmail.dto.post.UpdatePostRequestDto;
+import mongkey.maeilmail.domain.enums.CategoryType;
+import mongkey.maeilmail.dto.PageInfo;
+import mongkey.maeilmail.dto.like.LikePostRequestDto;
+import mongkey.maeilmail.dto.post.response.PostDto;
+import mongkey.maeilmail.dto.post.response.PostResponseDto;
+import mongkey.maeilmail.dto.post.request.SavePostRequestDto;
+import mongkey.maeilmail.dto.post.request.UpdatePostRequestDto;
 import mongkey.maeilmail.dto.post.response.AllPostResponseDto;
+import mongkey.maeilmail.dto.post.response.PostByCategoryDto;
 import mongkey.maeilmail.repository.PostLikeRepository;
 import mongkey.maeilmail.repository.PostRepository;
 import mongkey.maeilmail.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import mongkey.maeilmail.common.response.Success;
 
@@ -42,23 +47,52 @@ public class PostService {
 //
     @Transactional
     public ApiResponse<?> savePost(SavePostRequestDto requestDto){
-        Post post = postRepository.save(requestDto.toEntity());
+        User user = userRepository.findById(requestDto.getUser_id())
+                .orElseThrow(()-> new NotFoundException("해당 아이디를 가진 유저가 존재하지 않습니다.") {});
+        Post post = postRepository.save(requestDto.toEntity(user));
         return ApiResponse.success(Success.CREATE_POST_SUCCESS, setResponseDto(post));
     }
 
     @Transactional
     public ApiResponse<?> findAllPost(){
         List<Post> allPost = postRepository.findAll();
-        for (Post post : allPost) {
-            System.out.println("post = " + post);
-        }
+        List<PostDto> postDtoList = allPost.stream()
+                .map(post -> PostDto.builder()
+                        .post_id(post.getId())
+                        .writer(post.getUser().getName())
+                        .title(post.getTitle())
+                        .content(post.getContent())
+                        .created_at(post.getCreated_at())
+                        .updated_at(post.getUpdated_at())
+                        .build()).toList();
 
-        return ApiResponse.success(Success.SUCCESS, AllPostResponseDto.builder().allPostList(allPost).build());
+        return ApiResponse.success(Success.SUCCESS, AllPostResponseDto.builder().allPostList(postDtoList).build());
+    }
+
+//    /*카테고리별 게시글 조회*/
+    public ApiResponse<?> findPostByCategory(CategoryType categoryType, Pageable pageable) {
+
+        Page<Post> allPostByCategory = postRepository.findByCategory(pageable, categoryType.toString());
+        System.out.println("allPostByCategory.toString() = " + allPostByCategory.toString());
+        //set response
+        //Set Response Dtos
+        List<Post>postList = setPostList(categoryType, allPostByCategory);
+        PageInfo pageInfo = setPageInfo(allPostByCategory);
+        return ApiResponse.success(Success.SUCCESS, PostByCategoryDto.builder()
+                .pageInfo(pageInfo)
+                .categoryType(categoryType)
+                .postList(postList)
+                .build());
+//        //리턴할 때 json 형식 맞춰서 각 페이지 별 게시글 리턴
+//        return ApiResponse.success(Success.SUCCESS, "카테고리별 게시글 조회에 성공했습니다");
     }
 
     @Transactional
     public ApiResponse<?> updatePost(Long post_id, UpdatePostRequestDto requestDto){
-        Optional<Post> findPost = postRepository.findByPostIdAndUserId(post_id, requestDto.getUser_id());
+        User user = userRepository.findById(requestDto.getUser_id())
+                .orElseThrow(()-> new NotFoundException("해당 아이디를 가진 유저가 존재하지 않습니다.") {});
+
+        Optional<Post> findPost = postRepository.findById(post_id);
         if (!findPost.isPresent()){
             return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "찾으려는 데이터가 없습니다");
         }
@@ -87,55 +121,46 @@ public class PostService {
         return ApiResponse.success(Success.CREATE_POST_SUCCESS, "게시글 삭제를 완료했습니다");
     }
 
+
     @Transactional
     public ApiResponse<?> likePost(Long post_id, LikePostRequestDto requestDto){
-        //해당 게시글 있는지 확인
-        Optional<Post> findPost = postRepository.findById(post_id);
-
-        // 해당 게시글을 찾을 수 없다면
-        if (!findPost.isPresent()){
-            return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "찾으려는 게시글이 없습니다");
-        }
-
-        String string = findPost.get().toString();
-        System.out.println("string = " + string);
-
-        // 게시글 존재시 유저가 해당 게시글에 좋아요 누른 상태인지 post_id, user_id를 통해 postlikes 테이블 조회
-        Optional<PostLike> findPostLike = postLikeRepository.findByPostIdAndUserId(post_id, requestDto.toEntity().getUser_id());
-        if (!findPostLike.isPresent()){
-            // 이 시점에 user_id = String, post_id = Long
-            PostLike savePostLike = postLikeRepository.save(new PostLike(requestDto.getUser_id(), post_id));
-            return ApiResponse.success(Success.CREATE_POST_SUCCESS, "게시글 좋아요를 완료했습니다");
-        }
-        // 만약에 해당 게시글에 이미 좋아요 눌렀다면
-        return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "게시글 좋아요를 실패했습니다");
+        return ApiResponse.success(Success.SUCCESS);
     }
 
     public ApiResponse<?> unlikePost(Long post_id, LikePostRequestDto requestDto){
-        Optional<Post> findPost = postRepository.findById(post_id);
-        if (!findPost.isPresent()){
-            return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "찾으려는 게시글이 없습니다");
-        }
-
-        // 해당 게시글이 있다면 -> postlikes 테이블에 post_id, user_id를 통해 유저가 해당 게시글에 좋아요 누른 상태인지 확인
-        Optional<PostLike> findPostLike = postLikeRepository.findByPostIdAndUserId(post_id, requestDto.toEntity().getUser_id());
-        if (findPostLike.isPresent()){
-            postLikeRepository.deleteByPostIdAndUserId(requestDto.toEntity().getUser_id(), post_id);
-            return ApiResponse.success(Success.CREATE_POST_SUCCESS, "게시글 좋아요 삭제를 완료했습니다");
-        }
-        // 해당 게시글이 좋아요 수가 0이라면
-
-//        postRepository.deleteById(post_id);
-        return ApiResponse.failure(Error.NO_PERMISSION_TO_POST, "해당 게시글 좋아요 수가 0이라서 삭제를 실패했습니다");
+        return ApiResponse.success(Success.SUCCESS);
     }
+
     private PostResponseDto setResponseDto(Post post) {
         return PostResponseDto
                 .builder()
-                .user_id(post.getUser_id())
+                .user_id(post.getUser().getId())
                 .category(post.getCategory().toString())
                 .title(post.getTitle())
                 .content(post.getContent())
                 .written_at(post.getCreated_at())
+                .build();
+    }
+
+    private List<Post> setPostList(CategoryType categoryType, Page<Post> postPage){
+        return postPage.stream()
+                .map(post -> Post.builder()
+                        .id(post.getId())
+                        .user(post.getUser())
+                        .category(categoryType)
+                        .title(post.getTitle())
+                        .content(post.getContent())
+                        .build())
+                .toList();
+    }
+
+    private PageInfo setPageInfo(Page<Post> postPage){
+        return PageInfo.builder()
+                .last(!postPage.hasNext())
+                .previous(postPage.hasPrevious())
+                .nowPage(postPage.getNumber())
+                .totalPages(postPage.getTotalPages())
+                .totalElements(postPage.getTotalElements())
                 .build();
     }
 }

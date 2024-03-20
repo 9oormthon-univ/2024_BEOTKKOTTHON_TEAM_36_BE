@@ -16,22 +16,21 @@ public class Comment extends BaseTimeEntity {
     @Column
     private Long id;
 
-//    @ManyToOne
-//    @JoinColumn(name = "")
-    @Column
-    private Long user_id;
-
     @Column
     private Long post_id;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @Builder
-    public Comment(Long id, Long user_id, Long post_id, String content){
+    public Comment(Long id, Long user_id, Long post_id, String content, User user){
         this.id = id;
-        this.user_id = user_id;
         this.post_id = post_id;
         this.content = content;
+        this.user = user;
     }
 }

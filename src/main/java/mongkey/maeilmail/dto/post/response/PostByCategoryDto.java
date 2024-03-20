@@ -4,12 +4,14 @@ import lombok.Builder;
 import lombok.Getter;
 import mongkey.maeilmail.domain.Post;
 import mongkey.maeilmail.domain.enums.CategoryType;
+import mongkey.maeilmail.dto.PageInfo;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
 @Builder
-public class AllPostResponseDto {
-    private List<PostDto> allPostList;
+public class PostByCategoryDto {
+    private CategoryType categoryType;
+    private List<Post> postList;
+    private PageInfo pageInfo;
 }

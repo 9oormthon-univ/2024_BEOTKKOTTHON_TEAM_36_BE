@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import mongkey.maeilmail.common.response.ApiResponse;
 import mongkey.maeilmail.dto.admin.request.JoinAdminRequestDto;
 import mongkey.maeilmail.dto.admin.request.LoginAdminRequestDto;
-import mongkey.maeilmail.dto.post.SavePostRequestDto;
 import mongkey.maeilmail.dto.user.request.JoinUserRequestDto;
 import mongkey.maeilmail.dto.user.request.LoginUserRequestDto;
 import mongkey.maeilmail.service.MemberService;
