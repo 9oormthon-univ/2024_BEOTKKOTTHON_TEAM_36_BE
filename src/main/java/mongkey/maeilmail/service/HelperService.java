@@ -187,11 +187,22 @@ public class HelperService implements ChatGPTService {
     }
 
     private String extractSection(String email, String start, String end) {
-        // 섹션 시작 인덱스
         int startIndex = email.indexOf(start) + start.length();
-        // 섹션 끝 인덱스. 다음 섹션 시작으로 정의하거나 문자열 끝으로 정의
         int endIndex = (end != null) ? email.indexOf(end) : email.length();
-        // 섹션 내용 추출 및 반환
+
+        // 시작 문자열이 존재하지 않는 경우
+        if (startIndex == -1 ) {
+            // 에러 로그 출력 또는 예외 처리
+            log.debug("시작 섹션 '" + start + "'을(를) 찾을 수 없습니다.");
+            return "해당 문단을 생성하는데 실패했어요:( 다시 생성해주세요"; // 또는 적절한 기본값 반환
+        }
+
+        // 끝 문자열이 존재하지 않는 경우 (end가 null이 아닌데도 endIndex가 -1인 경우)
+        if (end != null && endIndex == -1) {
+            // 에러 로그 출력 또는 예외 처리
+            log.debug("끝 섹션 '" + end + "'을(를) 찾을 수 없습니다.");
+            return "해당 문단을 생성하는데 실패했어요:( 다시 생성해주세요";
+        }
         return email.substring(startIndex, endIndex).trim();
     }
 }
