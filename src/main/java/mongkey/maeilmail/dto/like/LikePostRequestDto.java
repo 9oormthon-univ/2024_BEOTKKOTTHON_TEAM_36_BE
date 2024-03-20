@@ -1,18 +1,20 @@
-package mongkey.maeilmail.dto.post;
+package mongkey.maeilmail.dto.like;
 
 import lombok.Getter;
+import mongkey.maeilmail.domain.Post;
 import mongkey.maeilmail.domain.PostLike;
+import mongkey.maeilmail.domain.User;
 
 @Getter
 public class LikePostRequestDto {
 
-    private String user_id;
+    private Long user_id;
     private Long post_id;
 
-    public PostLike toEntity(){
+    public PostLike toEntity(User user, Post post){
         return PostLike.builder()
-                .user_id(user_id)
-                .post_id(post_id)
+                .user(user)
+                .post(post)
                 .build();
     }
 

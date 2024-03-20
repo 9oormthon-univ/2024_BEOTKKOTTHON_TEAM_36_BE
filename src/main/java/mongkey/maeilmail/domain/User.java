@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import mongkey.maeilmail.common.domain.BaseTimeEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 @Table(name = "users")
@@ -13,7 +16,6 @@ import mongkey.maeilmail.common.domain.BaseTimeEntity;
 public class User extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @OneToMany(mappedBy = "user")
     @Column(name = "user_id")
     private Long id;
 
@@ -29,6 +31,8 @@ public class User extends BaseTimeEntity {
     @Column(length = 320)
     private String email;
 
+ @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Post> postList = new ArrayList<>();
     @Builder
     public User(String login_id, String password, String name, String email){
         this.login_id = login_id;

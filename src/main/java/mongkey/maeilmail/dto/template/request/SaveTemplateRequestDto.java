@@ -1,6 +1,7 @@
 package mongkey.maeilmail.dto.template.request;
 
 import lombok.Getter;
+import mongkey.maeilmail.domain.Admin;
 import mongkey.maeilmail.domain.Post;
 import mongkey.maeilmail.domain.Template;
 
@@ -12,9 +13,9 @@ public class SaveTemplateRequestDto {
     private String content;
     private Integer copy_count = 0;
 
-    public Template toEntity(){
+    public Template toEntity(Admin admin){
         return Template.builder()
-                .admin_id(admin_id)
+                .admin(admin)
                 .title(title)
                 .content(content)
                 .copy_count(copy_count)

@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import mongkey.maeilmail.common.domain.BaseTimeEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 @Table(name = "admin")
@@ -31,14 +34,17 @@ public class Admin extends BaseTimeEntity {
     @Column
     private Integer access_level;
 
+    @OneToMany(mappedBy = "admin", fetch = FetchType.LAZY)
+    private List<Template> templateList = new ArrayList<>();
 
     @Builder
-    public Admin (Long id, String employee_number, String password, String email, String name, Integer access_level){
+    public Admin (Long id, String employee_number, String password, String email, String name, Integer access_level, List<Template> templateList){
         this.id = id;
         this.employee_number = employee_number;
         this.password = password;
         this.email = email;
         this.name = name;
         this.access_level = access_level;
+        this.templateList = templateList;
     }
 }
