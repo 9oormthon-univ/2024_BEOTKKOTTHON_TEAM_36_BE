@@ -1,4 +1,4 @@
-package mongkey.maeilmail.dto.post;
+package mongkey.maeilmail.dto.like;
 
 import lombok.Getter;
 import mongkey.maeilmail.domain.Post;

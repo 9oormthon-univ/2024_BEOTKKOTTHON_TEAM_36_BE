@@ -2,21 +2,25 @@ package mongkey.maeilmail.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import mongkey.maeilmail.common.exception.NotFoundException;
 import mongkey.maeilmail.common.response.ApiResponse;
 import mongkey.maeilmail.common.response.Error;
 import mongkey.maeilmail.domain.Post;
 import mongkey.maeilmail.domain.User;
+import mongkey.maeilmail.domain.enums.CategoryType;
 import mongkey.maeilmail.dto.PageInfo;
-import mongkey.maeilmail.dto.post.LikePostRequestDto;
-import mongkey.maeilmail.dto.post.PostResponseDto;
-import mongkey.maeilmail.dto.post.SavePostRequestDto;
-import mongkey.maeilmail.dto.post.UpdatePostRequestDto;
+import mongkey.maeilmail.dto.like.LikePostRequestDto;
+import mongkey.maeilmail.dto.post.response.PostResponseDto;
+import mongkey.maeilmail.dto.post.request.SavePostRequestDto;
+import mongkey.maeilmail.dto.post.request.UpdatePostRequestDto;
 import mongkey.maeilmail.dto.post.response.AllPostResponseDto;
+import mongkey.maeilmail.dto.post.response.PostByCategoryDto;
 import mongkey.maeilmail.repository.PostLikeRepository;
 import mongkey.maeilmail.repository.PostRepository;
 import mongkey.maeilmail.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import mongkey.maeilmail.common.response.Success;
 
@@ -51,20 +55,17 @@ public class PostService {
     @Transactional
     public ApiResponse<?> findAllPost(){
         List<Post> allPost = postRepository.findAll();
-        for (Post post : allPost) {
-            System.out.println("post = " + post);
-        }
-
         return ApiResponse.success(Success.SUCCESS, AllPostResponseDto.builder().allPostList(allPost).build());
     }
 
 //    /*카테고리별 게시글 조회*/
     public ApiResponse<?> findPostByCategory(CategoryType categoryType, Pageable pageable) {
+
         Page<Post> allPostByCategory = postRepository.findByCategory(pageable, categoryType.toString());
         System.out.println("allPostByCategory.toString() = " + allPostByCategory.toString());
         //set response
         //Set Response Dtos
-        List<Post>postList = setPostList(allPostByCategory);
+        List<Post>postList = setPostList(categoryType, allPostByCategory);
         PageInfo pageInfo = setPageInfo(allPostByCategory);
         return ApiResponse.success(Success.SUCCESS, PostByCategoryDto.builder()
                 .pageInfo(pageInfo)
@@ -130,12 +131,12 @@ public class PostService {
                 .build();
     }
 
-    private List<Post> setPostList(Page<Post> postPage){
+    private List<Post> setPostList(CategoryType categoryType, Page<Post> postPage){
         return postPage.stream()
                 .map(post -> Post.builder()
                         .id(post.getId())
-                        .user_id(post.getUser_id())
-                        .category(post.getCategory())
+                        .user(post.getUser())
+                        .category(categoryType)
                         .title(post.getTitle())
                         .content(post.getContent())
                         .build())

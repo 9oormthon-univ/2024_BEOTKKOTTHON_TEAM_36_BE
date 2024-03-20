@@ -37,7 +37,7 @@ public class TemplateService {
         if (!findAdmin.isPresent()){
             return ApiResponse.failure(Error.ERROR, "권한이 없습니다");
         }
-        Template template = templateRepository.save(requestDto.toEntity());
+        Template template = templateRepository.save(requestDto.toEntity(findAdmin.get()));
         return ApiResponse.success(Success.SUCCESS, "게시글 등록에 성공했습니다");
     }
 

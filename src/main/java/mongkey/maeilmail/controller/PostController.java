@@ -1,14 +1,11 @@
 package mongkey.maeilmail.controller;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import mongkey.maeilmail.common.response.ApiResponse;
-import mongkey.maeilmail.domain.Post;
 import mongkey.maeilmail.domain.enums.CategoryType;
-import mongkey.maeilmail.dto.post.LikePostRequestDto;
-import mongkey.maeilmail.dto.post.SavePostRequestDto;
-import mongkey.maeilmail.dto.post.UpdatePostRequestDto;
-import mongkey.maeilmail.repository.PostRepository;
+import mongkey.maeilmail.dto.like.LikePostRequestDto;
+import mongkey.maeilmail.dto.post.request.SavePostRequestDto;
+import mongkey.maeilmail.dto.post.request.UpdatePostRequestDto;
 import mongkey.maeilmail.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
