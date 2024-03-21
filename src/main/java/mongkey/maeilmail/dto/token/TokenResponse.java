@@ -8,9 +8,11 @@ import lombok.NoArgsConstructor;
 public class TokenResponse {
     private String accessToken;
     private String tokenType;
+    private Long id;
 
-    public TokenResponse(String accessToken, String tokenType) {
+    public TokenResponse(String accessToken, String tokenType, Long id) {
         this.accessToken = accessToken;
         this.tokenType = tokenType;
+        this.id = id;
     }
 }
