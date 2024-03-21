@@ -64,7 +64,7 @@ public class MemberService {
         }
 
         // 토큰 발급
-        return ApiResponse.success(Success.SUCCESS, new TokenResponse(createToken(requestDto), "bearer"));
+        return ApiResponse.success(Success.SUCCESS, new TokenResponse(createToken(requestDto), "bearer", findUser.get().getId()));
     }
 
     /*관리자 회원가입*/
@@ -73,7 +73,7 @@ public class MemberService {
 
         Optional<Admin> findAdmin = adminRepository.findByEmployeeNumber(requestDto.getEmployee_number());
 
-        //이미 가입된 유저
+        //이미 가입된 관리자
         if (findAdmin.isPresent()){
             return ApiResponse.failure(Error.ERROR, "이미 등록된 관리자입니다");
         }
