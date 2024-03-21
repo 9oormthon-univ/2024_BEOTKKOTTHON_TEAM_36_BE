@@ -38,6 +38,7 @@ public class PostController {
         return postService.savePost(requestDto);
     }
 
+    /*게시글 조회*/
     @PatchMapping("/post/{post_id}")
     public ApiResponse<?> updatePost(@PathVariable Long post_id,
                                      @RequestBody UpdatePostRequestDto requestDto){
