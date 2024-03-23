@@ -39,9 +39,6 @@ public class HelperService implements ChatGPTService {
     @Value("${openai.url.model-v1}")
     private String retry_model;
 
-    @Value("${openai.url.model-list}")
-    private String modelListUrl;
-
     @Value("${openai.url.prompt}")
     private String promptUrl;
 
