@@ -42,9 +42,6 @@ public class HelperService implements ChatGPTService {
     @Value("${openai.url.prompt}")
     private String promptUrl;
 
-    @Value("${instruction.create}")
-    private String createInstruction;
-
     @Value("${instruction.basic}")
     private String basic;
 
@@ -74,7 +71,17 @@ public class HelperService implements ChatGPTService {
 
         // HelperRequestContentDto 객체 생성
         HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto( create_model,
-                createInstruction , helperRequestDto);
+                "    You are Korean Mail text generator AI for college students based on input information ‘sender, sender_info, receiver, receiver_info, purpose’\n" +
+                        "    - You should divide it into (title), (greeting), (body), and (closing). You NEVER missing out any of these\n" +
+                        "    - Your text should always be very polite.\n" +
+                        "    - NEVER put in the fact of a user YOU DON'T KNOW. If you need to include specific information other than the input information, you have to write it in the form of [  additional information  ].\n" +
+                        "\n" +
+                        "    Each part(title, greeting, body, closing) has the main contents to deliver and should not be duplicated for each part.\n" +
+                        "    - title: The title must be concise and clear and include the purpose of the email \n" +
+                        "    The title begins with [email purpose]. It is \"purpose\" of the input.\n" +
+                        "    - greeting: greeting must include the sender's self-introduction, including student number and name.\n" +
+                        "    - body: You create the text according to the purpose of the email. Yopu should write as politely as possible and put the reciever's intention first. You Don't need self introduction \n" +
+                        "    - closing:  You should include a thank you at the end. And You must match the format of the sender's name 드림 or sender's name 올림.\n" , helperRequestDto);
         log.debug("gpt 전송용 객체 생성 성공");
 
         // [STEP5] 통신을 위한 RestTemplate을 구성합니다.
