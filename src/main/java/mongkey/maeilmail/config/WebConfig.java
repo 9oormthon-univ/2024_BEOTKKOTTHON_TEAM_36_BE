@@ -9,7 +9,10 @@ public class WebConfig implements WebMvcConfigurer{
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:5502","http://localhost:3000", "chrome-extension://hmnaeapdihgonopbamgknldjohohglnj")
+                .allowedOrigins("http://localhost:5502","http://localhost:3000",
+                        "https://maeilmail.store/",
+                        "chrome-extension://hmnaeapdihgonopbamgknldjohohglnj",
+                        "chrome-extension://jemoljfpjcmfhlnfapdigipdhoapdeaj")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
         ;

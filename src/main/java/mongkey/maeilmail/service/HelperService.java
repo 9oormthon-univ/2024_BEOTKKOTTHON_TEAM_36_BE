@@ -36,17 +36,26 @@ public class HelperService implements ChatGPTService {
     @Value("${openai.url.model-v1}")
     private String create_model;
 
-    @Value("${openai.url.model-v1}")
+    @Value("${openai.url.model-v2}")
     private String retry_model;
-
-    @Value("${openai.url.model-list}")
-    private String modelListUrl;
 
     @Value("${openai.url.prompt}")
     private String promptUrl;
 
+    @Value("${instruction.basic}")
+    private String basic;
 
+    @Value("${instruction.title}")
+    private String title;
 
+    @Value("${instruction.greeting}")
+    private String greeting;
+
+    @Value("${instruction.body}")
+    private String body;
+
+    @Value("${instruction.closing}")
+    private String closing;
 
     /**
      * ChatGTP 이메일 생성
@@ -115,9 +124,12 @@ public class HelperService implements ChatGPTService {
         // [STEP1] 토큰 정보가 포함된 Header를 가져옵니다.
         HttpHeaders headers = chatGPTConfig.httpHeaders();
 
+
         // HelperRequestContentDto 객체 생성
-        HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto(retry_model,
-                "",
+        String instruction = getInstruction(contentPart);
+        log.debug("instruction: "+ instruction);
+        HelperToGptRequestDto helperToGptRequestDto = setRecreateGptRequestDto(contentPart, retry_model,
+                instruction,
                 helperRequestDto);
         log.debug("gpt 전송용 객체 생성 성공");
 
@@ -156,6 +168,19 @@ public class HelperService implements ChatGPTService {
                 .build();
     }
 
+    private String getInstruction(String contentPart){
+        String instruction = basic;
+        if(contentPart.equals("title"))
+            instruction += title;
+        if(contentPart.equals("greeting"))
+            instruction += greeting;
+        if(contentPart.equals("body"))
+            instruction += body;
+        if(contentPart.equals("closing"))
+            instruction += closing;
+        return instruction;
+    }
+
     private HelperToGptRequestDto setGptRequestDto(String model, String content, HelperRequestDto helperRequestDto){
         HelperRequestContentDto systemMessage = HelperRequestContentDto.builder()
                 .role("system")
@@ -164,7 +189,32 @@ public class HelperService implements ChatGPTService {
 
         HelperRequestContentDto userMessage = HelperRequestContentDto.builder()
                 .role("user")
-                .content(String.format("sender: %s\nsender_info: %s\nreceiver: %s\nreceiver_info: %s\npurpose: %s",
+                .content(String.format("email_part: %s\nsender: %s\nsender_info: %s\nreceiver: %s\nreceiver_info: %s\npurpose: %s",
+
+                        helperRequestDto.getSender(),
+                        helperRequestDto.getSender_info(),
+                        helperRequestDto.getReceiver(),
+                        helperRequestDto.getReceiver_info(),
+                        helperRequestDto.getPurpose()))
+                .build();
+
+        // HelperToGptRequestDto 객체 생성
+        return HelperToGptRequestDto.builder()
+                .model(model)
+                .messages(Arrays.asList(systemMessage, userMessage))
+                .build();
+    }
+
+    private HelperToGptRequestDto setRecreateGptRequestDto(String contentPart, String model, String content, HelperRequestDto helperRequestDto){
+        HelperRequestContentDto systemMessage = HelperRequestContentDto.builder()
+                .role("system")
+                .content(content)
+                .build();
+
+        HelperRequestContentDto userMessage = HelperRequestContentDto.builder()
+                .role("user")
+                .content(String.format("email_part: %s\nsender: %s\nsender_info: %s\nreceiver: %s\nreceiver_info: %s\npurpose: %s",
+                        contentPart,
                         helperRequestDto.getSender(),
                         helperRequestDto.getSender_info(),
                         helperRequestDto.getReceiver(),
