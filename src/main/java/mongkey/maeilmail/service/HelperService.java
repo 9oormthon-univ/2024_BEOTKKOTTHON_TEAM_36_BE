@@ -42,6 +42,9 @@ public class HelperService implements ChatGPTService {
     @Value("${openai.url.prompt}")
     private String promptUrl;
 
+    @Value("${instruction.create}")
+    private String createInstruction;
+
     @Value("${instruction.basic}")
     private String basic;
 
@@ -71,11 +74,7 @@ public class HelperService implements ChatGPTService {
 
         // HelperRequestContentDto 객체 생성
         HelperToGptRequestDto helperToGptRequestDto = setGptRequestDto( create_model,
-                "You are Korean Mail text generator AI for college students based on input information ‘sender, sender_info, receiver, receiver_info, purpose’\n" +
-                        "- You should divide it into (title), (greeting), (body), and (closing). You NEVER missing out any of these\n" +
-                        "- Your text should always be very polite.\n" +
-                        "- Never put in the information of a user you don't know. If you need to include specific information other than the input information, you have to write it in the form of [  additional information  ].\n"
-                , helperRequestDto);
+                createInstruction , helperRequestDto);
         log.debug("gpt 전송용 객체 생성 성공");
 
         // [STEP5] 통신을 위한 RestTemplate을 구성합니다.
@@ -127,7 +126,7 @@ public class HelperService implements ChatGPTService {
 
         // HelperRequestContentDto 객체 생성
         String instruction = getInstruction(contentPart);
-        log.debug("instruction: "+ instruction);
+        log.info("instruction->{} ", instruction);
         HelperToGptRequestDto helperToGptRequestDto = setRecreateGptRequestDto(contentPart, retry_model,
                 instruction,
                 helperRequestDto);
@@ -156,7 +155,7 @@ public class HelperService implements ChatGPTService {
 
         // Separate part
         String processedContent = fullContent.replace("{", "").replace("}", "");
-        log.debug("전처리 완료된 본문: "+ processedContent);
+        log.info("전처리 완료된 본문 ->{} ", processedContent);
         String[] sectionStarts = {"(version1)", "(version2)", "(version3)"};
 
 
@@ -170,14 +169,17 @@ public class HelperService implements ChatGPTService {
 
     private String getInstruction(String contentPart){
         String instruction = basic;
-        if(contentPart.equals("title"))
-            instruction += title;
+        String title1 = "title";
+        if(contentPart.equals(title1)) {
+            instruction = basic + title;
+        }
         if(contentPart.equals("greeting"))
-            instruction += greeting;
+            instruction = basic+ greeting;
         if(contentPart.equals("body"))
-            instruction += body;
+            instruction = basic + body;
         if(contentPart.equals("closing"))
-            instruction += closing;
+            instruction = basic+closing;
+        System.out.println(instruction);
         return instruction;
     }
 
