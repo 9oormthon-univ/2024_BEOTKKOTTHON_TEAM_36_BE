@@ -189,8 +189,7 @@ public class HelperService implements ChatGPTService {
 
         HelperRequestContentDto userMessage = HelperRequestContentDto.builder()
                 .role("user")
-                .content(String.format("email_part: %s\nsender: %s\nsender_info: %s\nreceiver: %s\nreceiver_info: %s\npurpose: %s",
-
+                .content(String.format("sender: %s\nsender_info: %s\nreceiver: %s\nreceiver_info: %s\npurpose: %s",
                         helperRequestDto.getSender(),
                         helperRequestDto.getSender_info(),
                         helperRequestDto.getReceiver(),
